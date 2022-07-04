@@ -12,6 +12,8 @@ const {
   resetPassword,
   showUserOnline,
   profile,
+  addFriend,
+  askingFriend,
 } = require("../controller/user_controller");
 const { jwtMiddle } = require("../middleware/jwt_middleware");
 
@@ -24,7 +26,7 @@ router.post("/resend-email", resendEmail);
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-forgot-password/:email", verifyForgotPassword);
 router.put("/reset-password", resetPassword);
-router.get("/online",jwtMiddle,showUserOnline)
-router.get("/profile",jwtMiddle,profile)
+router.get("/online", jwtMiddle, showUserOnline);
+router.get("/profile/:id", jwtMiddle, profile);
 
 module.exports = { userRouter: router };

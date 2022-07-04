@@ -11,6 +11,7 @@ const { isOnline, isOffline } = require("./controller/user_controller");
 
 app.use(cors());
 app.use(express.json());
+app.get("/", (req, res) => res.json({ message: "ok" }));
 app.use(router);
 
 io.on("connection", (socket) => {

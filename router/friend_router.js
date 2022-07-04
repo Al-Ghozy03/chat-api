@@ -1,11 +1,17 @@
-const { listFriends, addFriend, acceptFriend, listAddFriend, searchFriend } = require("../controller/friend_controller");
+const {
+  listFriends,
+  addFriend,
+  acceptFriend,
+  searchFriend,
+  listAskingFriend,
+} = require("../controller/friend_controller");
 
 const router = require("express")();
 
 router.get("/", listFriends);
-router.post("/add/:id",addFriend)
-router.put("/accept-friend/:id",acceptFriend)
-router.get("/list-add-friend",listAddFriend)
-router.get("/search",searchFriend)
+router.post("/add/:id", addFriend);
+router.put("/accept/:id", acceptFriend);
+router.get("/asking-friend", listAskingFriend);
+router.get("/search", searchFriend);
 
 module.exports = { friendRouter: router };

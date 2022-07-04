@@ -26,10 +26,14 @@ async function isOffline(id) {
 
 async function profile(req, res) {
   try {
-    const data = await usermodel.findById({
-      _id: jwtDecode(req.headers.authorization).id,
-    },{name:1,email:1,photo_profile:1,bio:1,status:1});
-    return res.json({data})
+    const { id } = req.params
+    const data = await usermodel.findById(
+      {
+        _id: id,
+      },
+      { name: 1, email: 1, photo_profile: 1, bio: 1, status: 1 }
+    );
+    return res.json({ data });
   } catch (er) {
     console.log(er);
     return res.status(442).json({ er });
@@ -252,6 +256,7 @@ async function register(req, res) {
     const check = await usermodel.findOne({ email: body.email });
     if (check) return res.status(442).json({ message: "email has been used" });
     body.password = bcrypt.hashSync(body.password, 10);
+    body.isVerified = true;
     const data = await usermodel.create(body);
     const code = Math.floor(1000 + Math.random() * 9000);
 
@@ -264,7 +269,7 @@ async function register(req, res) {
     // if (mail === "error") {
     //   console.log("failed to send verification email");
     // } else {
-    await tokenmodel.create({ user_id: jwtDecode(token).id, token: code });
+    // await tokenmodel.create({ user_id: jwtDecode(token).id, token: code });
     // }
     await usermodel.updateOne(
       { _id: jwtDecode(token).id },
@@ -290,5 +295,5 @@ module.exports = {
   isOnline,
   isOffline,
   showUserOnline,
-  profile
+  profile,
 };

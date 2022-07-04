@@ -4,19 +4,55 @@ const { ObjectId } = require("mongodb");
 
 async function searchFriend(req, res) {
   try {
+    const { key, page, pageSize } = req.query;
     const data = await usermodel.aggregate([
       {
         $match: {
           _id: { $ne: ObjectId(jwtDecode(req.headers.authorization).id) },
+          $or: [{ name: { $regex: key } }, { email: { $regex: key } }],
         },
       },
       {
         $project: {
           email: "$email",
           name: "$name",
-          bio: "$bio",
-          photo_profile: "$photo_profile",
           status: "$status",
+          photo_profile: "$photo_profile",
+        },
+      },
+      {
+        $lookup: {
+          from: "friends",
+          localField: "_id",
+          foreignField: "from",
+          as: "from",
+          pipeline: [
+            {
+              $project: {
+                from: "$from",
+                to: "$to",
+                status: "$status",
+              },
+            },
+            {
+              $match: {
+                $or: [
+                  {
+                    from: ObjectId(jwtDecode(req.headers.authorization).id),
+                    to: {
+                      $ne: ObjectId(jwtDecode(req.headers.authorization).id),
+                    },
+                  },
+                  {
+                    to: ObjectId(jwtDecode(req.headers.authorization).id),
+                    from: {
+                      $ne: ObjectId(jwtDecode(req.headers.authorization).id),
+                    },
+                  },
+                ],
+              },
+            },
+          ],
         },
       },
       {
@@ -24,42 +60,42 @@ async function searchFriend(req, res) {
           from: "friends",
           localField: "_id",
           foreignField: "to",
-          as: "friend",
-          // pipeline: [
-          //   {
-          //     $match: {
-          //       from: {
-          //         $ne: ObjectId(jwtDecode(req.headers.authorization).id),
-          //       },
-          //     },
-          //     // $match: {
-          //     //   to: {
-          //     //     $ne: ObjectId(jwtDecode(req.headers.authorization).id),
-          //     //   },
-          //     // },
-          //   },
-          // ],
+          as: "to",
+          pipeline: [
+            {
+              $project: {
+                from: "$from",
+                to: "$to",
+                status: "$status",
+              },
+            },
+          ],
         },
       },
+
+      {
+        $skip:
+          page == undefined ? 1 : (parseInt(page) - 1) * parseInt(pageSize),
+      },
+      {
+        $limit: pageSize == undefined ? 8 : parseInt(pageSize),
+      },
     ]);
-    return res.json({ data });
+    return res.json({ data: data });
   } catch (er) {
     console.log(er);
     return res.status(442).json({ er });
   }
 }
 
-async function listAddFriend(req, res) {
+async function listAskingFriend(req, res) {
   try {
+    const { page, pageSize } = req.query;
     const data = await friendmodel.aggregate([
       {
-        $match: { to: ObjectId(jwtDecode(req.headers.authorization).id) },
-      },
-      {
-        $project: {
-          from: "$from",
-          to: "$to",
-          status: "$status",
+        $match: {
+          to: ObjectId(jwtDecode(req.headers.authorization).id),
+          status: "ask",
         },
       },
       {
@@ -74,6 +110,7 @@ async function listAddFriend(req, res) {
                 email: "$email",
                 name: "$name",
                 photo_profile: "$photo_profile",
+                status: "$status",
               },
             },
           ],
@@ -139,13 +176,11 @@ async function addFriend(req, res) {
 
 async function listFriends(req, res) {
   try {
+    const { id } = req.query;
     const data = await friendmodel.aggregate([
       {
         $match: {
-          $or: [
-            { from: ObjectId(jwtDecode(req.headers.authorization).id) },
-            { to: ObjectId(jwtDecode(req.headers.authorization).id) },
-          ],
+          $or: [{ from: ObjectId(id) }, { to: ObjectId(id) }],
         },
       },
       {
@@ -204,6 +239,6 @@ module.exports = {
   listFriends,
   addFriend,
   acceptFriend,
-  listAddFriend,
+  listAskingFriend,
   searchFriend,
 };
